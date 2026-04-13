@@ -2,7 +2,12 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '/api';
 
 function buildUrl(path, params) {
-  const url = new URL(`${API_BASE_URL}${path}`);
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base =
+    API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')
+      ? API_BASE_URL
+      : `${window.location.origin}${API_BASE_URL}`;
+  const url = new URL(`${base}${normalizedPath}`);
 
   Object.entries(params || {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -40,7 +45,7 @@ async function apiRequest(path, options = {}) {
 }
 
 export async function login(credentials) {
-  const payload = await apiRequest('/api/login', {
+  const payload = await apiRequest('/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
@@ -49,7 +54,7 @@ export async function login(credentials) {
 }
 
 export async function getTasks({ token, params }) {
-  const payload = await apiRequest('/api/tasks', {
+  const payload = await apiRequest('/tasks', {
     method: 'GET',
     token,
     params,

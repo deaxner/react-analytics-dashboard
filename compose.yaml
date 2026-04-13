@@ -9,8 +9,9 @@ services:
     ports:
       - "${DASHBOARD_PORT:-3000}:80"
     networks:
-      - task_api_network
+      - portfolio_suite_network
 
 networks:
-  task_api_network:
+  portfolio_suite_network:
     external: true
+    name: portfolio_suite_network

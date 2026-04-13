@@ -15,14 +15,16 @@ if ($selectedPort -gt $maxPort) {
     throw "No free port found between $preferredPort and $maxPort."
 }
 
-$network = docker network ls --format "{{.Name}}" | Where-Object { $_ -eq "task_api_network" }
-if (-not $network) {
-    throw "Docker network 'task_api_network' not found. Start symfony-task-api-service first."
+$networkName = "portfolio_suite_network"
+$existingNetwork = docker network ls --format "{{.Name}}" | Where-Object { $_ -eq $networkName }
+if (-not $existingNetwork) {
+    docker network create $networkName | Out-Null
 }
 
 $env:DASHBOARD_PORT = [string]$selectedPort
 
 Write-Host "Using dashboard host port $selectedPort"
+Write-Host "Using shared Docker network $networkName"
 docker compose up --build -d
 
 if ($LASTEXITCODE -ne 0) {
