@@ -139,7 +139,7 @@ Login request example:
 import { login } from './src/services/api';
 
 const session = await login({
-  email: 'owner@example.com',
+  email: 'alex@example.com',
   password: 'Password123',
 });
 ```

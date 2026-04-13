@@ -15,12 +15,22 @@ function RecentTasks({ tasks }) {
             <div>
               <h3>{task.title}</h3>
               <p>{task.description || 'No description provided.'}</p>
+              <p className="recent-item__project">{task.project?.name}</p>
+              <p className="recent-item__project">
+                Logged {(task.totalLoggedMinutes / 60).toFixed(1)}h · Billable{' '}
+                {(task.billableMinutes / 60).toFixed(1)}h
+              </p>
             </div>
             <div className="recent-item__meta">
               <span className={`pill pill--${task.status}`}>{task.status}</span>
               <span className={`pill pill--priority-${task.priority}`}>
                 {task.priority}
               </span>
+              {task.completedAt ? (
+                <span className="pill pill--timeline">Done</span>
+              ) : task.startedAt ? (
+                <span className="pill pill--timeline">Started</span>
+              ) : null}
             </div>
           </article>
         ))}

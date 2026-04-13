@@ -14,9 +14,17 @@ const Charts = lazy(() => import('../components/dashboard/Charts'));
 
 function DashboardPage() {
   const { token, user, logout } = useAuth();
-  const { analytics, error, filters, loading, refreshing, refresh, setFilters } =
-    useDashboardData(token);
-  const hasTasks = analytics.summary[0]?.value > 0;
+  const {
+    analytics,
+    error,
+    filters,
+    loading,
+    projects,
+    refreshing,
+    refresh,
+    setFilters,
+  } = useDashboardData(token, user?.email, logout);
+  const hasTasks = analytics.totalTasks > 0;
 
   if (loading) {
     return (
@@ -31,10 +39,11 @@ function DashboardPage() {
       <section className="dashboard-hero">
         <div>
           <p className="section-kicker">Operational analytics</p>
-          <h1>Task delivery dashboard</h1>
+          <h1>Delivery economics cockpit</h1>
           <p className="dashboard-hero__copy">
-            View task velocity, bottlenecks, and delivery pressure across the
-            current API-backed workflow.
+            Join execution flow with client billing to see which tickets are
+            driving margin, where SLA delivery is burning hours, and how each
+            project is performing commercially.
           </p>
           <p className="dashboard-hero__meta">
             Signed in as <strong>{user?.email}</strong>
@@ -51,6 +60,8 @@ function DashboardPage() {
 
       <Filters
         filters={filters}
+        projects={projects}
+        clients={analytics.clients ?? []}
         onChange={setFilters}
         onRefresh={refresh}
         refreshing={refreshing}

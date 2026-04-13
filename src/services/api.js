@@ -1,12 +1,14 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '/api';
+const SAAS_API_BASE_URL =
+  import.meta.env.VITE_SAAS_API_BASE_URL?.replace(/\/$/, '') || '/saas-api';
 
-function buildUrl(path, params) {
+function buildUrl(path, params, baseUrl = API_BASE_URL) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const base =
-    API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')
-      ? API_BASE_URL
-      : `${window.location.origin}${API_BASE_URL}`;
+    baseUrl.startsWith('http://') || baseUrl.startsWith('https://')
+      ? baseUrl
+      : `${window.location.origin}${baseUrl}`;
   const url = new URL(`${base}${normalizedPath}`);
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -19,8 +21,8 @@ function buildUrl(path, params) {
 }
 
 async function apiRequest(path, options = {}) {
-  const { token, params, headers, ...requestOptions } = options;
-  const response = await fetch(buildUrl(path, params), {
+  const { token, params, headers, baseUrl = API_BASE_URL, ...requestOptions } = options;
+  const response = await fetch(buildUrl(path, params, baseUrl), {
     ...requestOptions,
     headers: {
       'Content-Type': 'application/json',
@@ -64,4 +66,33 @@ export async function getTasks({ token, params }) {
     data: payload.data ?? [],
     meta: payload.meta ?? {},
   };
+}
+
+export async function getProjects({ token }) {
+  const payload = await apiRequest('/projects', {
+    method: 'GET',
+    token,
+  });
+
+  return payload.data ?? [];
+}
+
+export async function getTimeEntries({ token, params }) {
+  const payload = await apiRequest('/time-entries', {
+    method: 'GET',
+    token,
+    params,
+  });
+
+  return payload.data ?? [];
+}
+
+export async function getCommercialAnalytics({ email }) {
+  const payload = await apiRequest('/commercial', {
+    method: 'GET',
+    baseUrl: SAAS_API_BASE_URL,
+    params: { email },
+  });
+
+  return payload.data ?? { projects: [], clients: [], summary: {} };
 }

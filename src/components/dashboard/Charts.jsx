@@ -3,11 +3,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,19 +13,17 @@ import {
 import Card from '../ui/Card';
 
 const STATUS_COLORS = ['#57b6ff', '#f4b65f', '#45d483'];
-const PRIORITY_COLORS = ['#74c0fc', '#ffd166', '#ff6b6b'];
-
 function Charts({ analytics }) {
   return (
     <div className="charts-grid">
       <Card className="chart-card chart-card--wide">
         <div className="chart-card__header">
           <p className="section-kicker">Timeline</p>
-          <h2>Task creation velocity</h2>
+          <h2>Intake vs completion flow</h2>
         </div>
         <div className="chart-card__body">
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={analytics.tasksByDate}>
+            <LineChart data={analytics.timelineFlow}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis dataKey="date" stroke="var(--chart-axis)" />
               <YAxis allowDecimals={false} stroke="var(--chart-axis)" />
@@ -41,8 +36,17 @@ function Charts({ analytics }) {
               />
               <Line
                 type="monotone"
-                dataKey="count"
+                dataKey="created"
+                name="Created"
                 stroke="#57b6ff"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="completed"
+                name="Completed"
+                stroke="#45d483"
                 strokeWidth={3}
                 dot={{ r: 4 }}
               />
@@ -53,27 +57,15 @@ function Charts({ analytics }) {
 
       <Card className="chart-card">
         <div className="chart-card__header">
-          <p className="section-kicker">Status</p>
-          <h2>Delivery mix</h2>
+          <p className="section-kicker">Projects</p>
+          <h2>Margin by project</h2>
         </div>
         <div className="chart-card__body">
           <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={analytics.tasksByStatus}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={70}
-                outerRadius={100}
-                paddingAngle={5}
-              >
-                {analytics.tasksByStatus.map((entry, index) => (
-                  <Cell
-                    key={entry.name}
-                    fill={STATUS_COLORS[index % STATUS_COLORS.length]}
-                  />
-                ))}
-              </Pie>
+            <BarChart data={analytics.marginByProject}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+              <XAxis dataKey="name" stroke="var(--chart-axis)" />
+              <YAxis stroke="var(--chart-axis)" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'var(--surface-elevated)',
@@ -81,8 +73,12 @@ function Charts({ analytics }) {
                   borderRadius: '16px',
                 }}
               />
-              <Legend />
-            </PieChart>
+              <Bar dataKey="margin" radius={[10, 10, 0, 0]}>
+                {analytics.marginByProject.map((entry, index) => (
+                  <Cell key={entry.name} fill={entry.color ?? STATUS_COLORS[index % STATUS_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
@@ -90,14 +86,14 @@ function Charts({ analytics }) {
       <Card className="chart-card">
         <div className="chart-card__header">
           <p className="section-kicker">Priority</p>
-          <h2>Current workload pressure</h2>
+          <h2>Average revenue vs cost</h2>
         </div>
         <div className="chart-card__body">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={analytics.tasksByPriority}>
+            <BarChart data={analytics.revenueCostByPriority}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis dataKey="name" stroke="var(--chart-axis)" />
-              <YAxis allowDecimals={false} stroke="var(--chart-axis)" />
+              <YAxis stroke="var(--chart-axis)" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'var(--surface-elevated)',
@@ -105,14 +101,33 @@ function Charts({ analytics }) {
                   borderRadius: '16px',
                 }}
               />
-              <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-                {analytics.tasksByPriority.map((entry, index) => (
-                  <Cell
-                    key={entry.name}
-                    fill={PRIORITY_COLORS[index % PRIORITY_COLORS.length]}
-                  />
-                ))}
-              </Bar>
+              <Bar dataKey="revenue" fill="#57b6ff" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="cost" fill="#ff8a65" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card className="chart-card chart-card--wide">
+        <div className="chart-card__header">
+          <p className="section-kicker">Profitability</p>
+          <h2>Client margin and unpaid exposure</h2>
+        </div>
+        <div className="chart-card__body">
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={analytics.clientProfitability}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+              <XAxis dataKey="name" stroke="var(--chart-axis)" />
+              <YAxis stroke="var(--chart-axis)" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                }}
+              />
+              <Bar dataKey="margin" fill="#45d483" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="unpaidExposure" fill="#f4b65f" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

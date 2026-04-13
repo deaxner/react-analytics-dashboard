@@ -260,7 +260,7 @@ select {
 }
 
 .filters-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .stats-grid,
@@ -270,7 +270,7 @@ select {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .stat-card {
@@ -335,6 +335,14 @@ select {
   margin: 0 0 6px;
 }
 
+.recent-item__project {
+  margin: 0;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+}
+
 .recent-item__meta {
   display: flex;
   gap: 10px;
@@ -372,6 +380,10 @@ select {
 
 .pill--priority-high {
   color: #ff6b8b;
+}
+
+.pill--timeline {
+  color: #89d6ff;
 }
 
 .state-card,

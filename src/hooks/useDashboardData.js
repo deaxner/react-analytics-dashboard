@@ -1,22 +1,33 @@
 import { useEffect, useState } from 'react';
-import { getTasks } from '../services/api';
+import {
+  getCommercialAnalytics,
+  getProjects,
+  getTasks,
+  getTimeEntries,
+} from '../services/api';
 import {
   buildAnalytics,
+  filterTasksByCommercial,
   filterTasksByDateRange,
+  filterTasksByProject,
   getDefaultDateRange,
 } from '../utils/analytics';
 
 const DEFAULT_FILTERS = {
   startDate: '',
   endDate: '',
+  projectId: 'all',
+  clientId: 'all',
+  billingModel: 'all',
   priority: 'all',
 };
 
-async function fetchAllTasks(token, priority) {
+async function fetchAllTasks(token, priority, projectId) {
   const params = {
     page: 1,
     limit: 100,
     priority: priority === 'all' ? undefined : priority,
+    projectId: projectId === 'all' ? undefined : projectId,
     sort: 'createdAt',
     direction: 'desc',
   };
@@ -46,9 +57,16 @@ async function fetchAllTasks(token, priority) {
   return tasks;
 }
 
-export function useDashboardData(token) {
+export function useDashboardData(token, userEmail, onUnauthorized) {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [projects, setProjects] = useState([]);
   const [rawTasks, setRawTasks] = useState([]);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [commercialData, setCommercialData] = useState({
+    projects: [],
+    clients: [],
+    summary: {},
+  });
   const [analytics, setAnalytics] = useState(() => buildAnalytics([]));
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +80,12 @@ export function useDashboardData(token) {
       setError('');
 
       try {
-        const tasks = await fetchAllTasks(token, filters.priority);
+        const [projectList, tasks, entries, commercial] = await Promise.all([
+          getProjects({ token }),
+          fetchAllTasks(token, filters.priority, filters.projectId),
+          getTimeEntries({ token }),
+          getCommercialAnalytics({ email: userEmail }),
+        ]);
         if (!active) {
           return;
         }
@@ -75,18 +98,36 @@ export function useDashboardData(token) {
         };
 
         setFilters(effectiveFilters);
+        setProjects(projectList);
         setRawTasks(tasks);
+        setTimeEntries(entries);
+        setCommercialData(commercial);
         setAnalytics(
           buildAnalytics(
-            filterTasksByDateRange(
-              tasks,
-              effectiveFilters.startDate,
-              effectiveFilters.endDate
-            )
+            filterTasksByCommercial(
+              filterTasksByProject(
+                filterTasksByDateRange(
+                  tasks,
+                  effectiveFilters.startDate,
+                  effectiveFilters.endDate
+                ),
+                effectiveFilters.projectId
+              ),
+              commercial,
+              effectiveFilters
+            ),
+            projectList,
+            commercial,
+            entries
           )
         );
       } catch (loadError) {
         if (active) {
+          if (loadError.status === 401) {
+            onUnauthorized?.();
+            return;
+          }
+
           setError(loadError.message || 'Failed to load dashboard data.');
         }
       } finally {
@@ -101,29 +142,72 @@ export function useDashboardData(token) {
     return () => {
       active = false;
     };
-  }, [token, filters.priority]);
+  }, [token, filters.priority, filters.projectId, userEmail]);
 
   useEffect(() => {
     setAnalytics(
       buildAnalytics(
-        filterTasksByDateRange(rawTasks, filters.startDate, filters.endDate)
+        filterTasksByCommercial(
+          filterTasksByProject(
+            filterTasksByDateRange(rawTasks, filters.startDate, filters.endDate),
+            filters.projectId
+          ),
+          commercialData,
+          filters
+        ),
+        projects,
+        commercialData,
+        timeEntries
       )
     );
-  }, [filters.endDate, filters.startDate, rawTasks]);
+  }, [
+    commercialData,
+    filters.billingModel,
+    filters.clientId,
+    filters.endDate,
+    filters.projectId,
+    filters.startDate,
+    projects,
+    rawTasks,
+    timeEntries,
+  ]);
 
   async function refresh() {
     setRefreshing(true);
     setError('');
 
     try {
-      const tasks = await fetchAllTasks(token, filters.priority);
+      const [projectList, tasks, entries, commercial] = await Promise.all([
+        getProjects({ token }),
+        fetchAllTasks(token, filters.priority, filters.projectId),
+        getTimeEntries({ token }),
+        getCommercialAnalytics({ email: userEmail }),
+      ]);
+      setProjects(projectList);
       setRawTasks(tasks);
+      setTimeEntries(entries);
+      setCommercialData(commercial);
       setAnalytics(
         buildAnalytics(
-          filterTasksByDateRange(tasks, filters.startDate, filters.endDate)
+          filterTasksByCommercial(
+            filterTasksByProject(
+              filterTasksByDateRange(tasks, filters.startDate, filters.endDate),
+              filters.projectId
+            ),
+            commercial,
+            filters
+          ),
+          projectList,
+          commercial,
+          entries
         )
       );
     } catch (refreshError) {
+      if (refreshError.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
+
       setError(refreshError.message || 'Failed to refresh dashboard data.');
     } finally {
       setRefreshing(false);
@@ -135,7 +219,9 @@ export function useDashboardData(token) {
     error,
     filters,
     loading,
+    projects,
     rawTasks,
+    commercialData,
     refreshing,
     refresh,
     setFilters,
